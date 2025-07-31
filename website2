@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Globe Network Redesign</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #060610, #090912, #16213e);
+      overflow-x: hidden;
+      font-family: 'Rajdhani', sans-serif;
+      scrollbar-width: none;       
+  -ms-overflow-style: none;
+    }
+    
+
+
+body::-webkit-scrollbar {
+  display: none;                /* Chrome, Safari and Opera */
+}
+
+
+
+    canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      display: block;
+      z-index: 1;
+      transition: opacity 0.5s, filter 0.3s;
+    }
+#loader {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: linear-gradient(135deg, #050510, #0b0d1a);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  animation: fadeIn 1s ease-in-out;
+  overflow: hidden;
+}
+
+.pulse-circle {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #64c3ff 0%, #1a1c2c 80%);
+  animation: pulse 2s infinite ease-in-out;
+  box-shadow: 0 0 20px #64c3ff66, 0 0 40px #64c3ff44, 0 0 60px #64c3ff22;
+  margin-bottom: 30px;
+}
+
+.loader-text {
+  color: #e0e0ff;
+  font-size: 1.3em;
+  letter-spacing: 0.8px;
+  text-align: center;
+}
+
+.dots::after {
+  content: '';
+  display: inline-block;
+  animation: dotting 1.2s infinite steps(4);
+}
+
+@keyframes dotting {
+  0%   { content: ''; }
+  25%  { content: '.'; }
+  50%  { content: '..'; }
+  75%  { content: '...'; }
+  100% { content: ''; }
+}
+
+@keyframes pulse {
+  0% { transform: scale(0.95); opacity: 0.9; }
+  50% { transform: scale(1.05); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.9; }
+}
+
+.splitter {
+  position: fixed;
+  top: 0;
+  width: 50vw;
+  height: 100vh;
+  background: #050510;
+  z-index: 9998;
+  transition: transform 1s ease-in-out;
+  pointer-events: none;
+}
+
+.left-pane {
+  left: 0;
+  transform: translateX(0);
+}
+
+.right-pane {
+  right: 0;
+  transform: translateX(0);
+}
+
+body.loaded .left-pane {
+  transform: translateX(-100%);
+}
+
+body.loaded .right-pane {
+  transform: translateX(100%);
+}
+
+    #company-name {
+      font-size: 2em;
+      font-weight: bold;
+      color: #fff;
+      position: fixed;
+      
+      transform: translate(-50%, -50%);
+      opacity: 0;
+      z-index: 5;
+      transition: all 0.6s ease;
+      pointer-events: none;
+      text-align: center;
+    }
+
+    #company-name.reveal {
+      opacity: 1;
+      animation: glitch 2s steps(2, end) ease-in-out infinite;
+    }
+
+    #company-name.shrink {
+      top: 20px;
+      left: 20px;
+      transform: scale(0.6);
+      opacity: 0.8;
+      animation: none;
+    }
+
+    #next-section {
+      position: relative;
+      z-index: 5;
+      padding: 100px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 60px;
+      margin-top: 100vh;
+    }
+
+    .card-wrapper {
+      width: 90%;
+      max-width: 600px;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(14px);
+      border-radius: 16px;
+      padding: 30px;
+      color: #fff;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      transition: transform 0.4s ease, box-shadow 0.3s ease, opacity 0.6s;
+      opacity: 0;
+      transform: translateY(50px);
+        
+        cursor: pointer;
+
+    }
+
+   
+    .card.visible {
+      opacity: 1;
+      transform: translateY(0px);
+    }
+
+    .card:hover {
+      transform: translateY(-10px) scale(1.05);
+      box-shadow: 0 30px 60px rgba(100, 195, 255, 0.3);
+      background: rgba(255, 255, 255, 0.1);}
+
+    .dots {
+      font-size: 2em;
+      color: #d6d6f0;
+      animation: bounce 1.2s infinite;
+    }
+
+    .parallax {
+      transition: transform 0.2s ease-out;
+      will-change: transform;
+    }
+
+    .globe-blob {
+      position: fixed;
+      border-radius: 50%;
+      background: radial-gradient(circle, #64c3ff55 0%, #00000000 80%);
+      animation: float 15s ease-in-out infinite;
+      z-index: 0;
+      pointer-events: none;
+      filter: blur(20px);
+      opacity: 0.12;
+    }
+
+    .globe-blob:nth-child(1) {
+      width: 300px;
+      height: 300px;
+      top: 20%;
+      left: 10%;
+      animation-delay: 0s;
+    }
+
+    .globe-blob:nth-child(2) {
+      width: 400px;
+      height: 400px;
+      bottom: 15%;
+      right: 8%;
+      animation-delay: 3s;
+    }
+
+    .globe-blob:nth-child(3) {
+      width: 200px;
+      height: 200px;
+      top: 60%;
+      left: 40%;
+      animation-delay: 6s;
+    }
+
+    
+
+    .site-footer {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.04);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(12px);
+      padding: 30px 0;
+      text-align: center;
+      z-index: 10;
+      position: bottom;
+    }
+
+    .footer-socials {
+      display: flex;
+      justify-content: center;
+      gap: 25px;
+    }
+
+    .footer-socials a {
+      color: #ccc;
+      font-size: 1.4em;
+      transition: color 0.3s, transform 0.2s;
+    }
+
+    .footer-socials a:hover {
+      color: #64c3ff;
+      transform: scale(1.2);
+    }
+
+    .footer-spacer {
+      height: 100px;
+      background: transparent;
+    }
+
+    @keyframes glitch {
+      0% { transform: translate(-50%, -50%) skew(0.5deg, 0.5deg); }
+      20% { transform: translate(-48%, -52%) skew(-1deg, 0.8deg); }
+      40% { transform: translate(-52%, -48%) skew(0.8deg, -0.6deg); }
+      60% { transform: translate(-50%, -50%) skew(-0.5deg, 0.2deg); }
+      80% { transform: translate(-51%, -49%) skew(0.4deg, -0.4deg); }
+      100% { transform: translate(-50%, -50%) skew(0deg, 0deg); }
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes float {
+      0% { transform: translateY(0px) scale(1); }
+      50% { transform: translateY(-20px) scale(1.05); }
+      100% { transform: translateY(0px) scale(1); }
+    }
+
+    @media (max-width: 768px) {
+      #next-section {
+        padding: 60px 15px;
+        gap: 40px;
+      }
+      .card {
+        padding: 20px;
+      }
+      .manifesto {
+        font-size: 0.8em;
+        padding: 10px 14px;
+      }
+      .footer-socials {
+        flex-wrap: wrap;
+      }
+    }
+  </style>
+</head>
+
+
+<body>
+  <div class="globe-blob"></div>
+  <div class="globe-blob"></div>
+  <div class="globe-blob"></div>
+
+  <div id="loader">
+  <div class="pulse-circle"></div>
+  <div class="loader-text">Loading your global network<span class="dots">...</span></div>
+</div>
+<div class="splitter left-pane"></div>
+<div class="splitter right-pane"></div>
+
+
+  <canvas id="globe"></canvas>
+
+  <a href="#" id="company-name">SKYNET GLOBAL CONSULTANT</a>
+ 
+<div id="logo-container">
+  <img src="your-logo.png" alt="Skynet Logo" id="logo" />
+</div>
+
+  <section id="next-section">
+  <div class="card-wrapper">
+    <div class="card parallax" data-speed="1.2">
+      <h3>KTEK Solutions</h3>
+      <p>Advanced technology solutions for the digital age. Streamlining innovation and digital transformation across industries.</p>
+    </div>
+  </div>
+  <div class="card-wrapper">
+    <div class="card parallax" data-speed="1.5">
+      <h3>Consulting Channel Partner</h3>
+      <p>Strategic partnerships and expert consultancy to accelerate your business growth and digital outreach.</p>
+    </div>
+  </div>
+ 
+ 
+</section>
+    <div class="footer-spacer"></div>
+<footer class="site-footer">
+  <div class="footer-socials">
+    <a href="#"><i class="fab fa-facebook-f"></i></a>
+    <a href="#"><i class="fab fa-twitter"></i></a>
+    <a href="#"><i class="fab fa-linkedin-in"></i></a>
+    <a href="#"><i class="fab fa-instagram"></i></a>
+    <a href="#"><i class="fab fa-github"></i></a>
+  </div>
+</footer>
+
+
+
+
+
+  <script>
+    const canvas = document.getElementById("globe");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const loader = document.getElementById("loader");
+    const nextSection = document.getElementById("next-section");
+    const socialLinks = document.querySelectorAll(".socials a");
+    const companyName = document.getElementById("company-name");
+
+    const radius = 150;
+    const POINT_COUNT = 50;
+    const points = [];
+
+    for (let i = 0; i < POINT_COUNT; i++) {
+      let phi = Math.acos(2 * Math.random() - 1);
+      let theta = 2 * Math.PI * Math.random();
+      let x = radius * Math.sin(phi) * Math.cos(theta);
+      let y = radius * Math.sin(phi) * Math.sin(theta);
+      let z = radius * Math.cos(phi);
+      points.push({ x, y, z, visible: false });
+    }
+
+    let zoom = 1;
+    let blurAmount = 0;
+    let globeOpacity = 1;
+
+    function rotateY(p, angle) {
+      let cos = Math.cos(angle), sin = Math.sin(angle);
+      return {
+        x: p.x * cos - p.z * sin,
+        y: p.y,
+        z: p.x * sin + p.z * cos
+      };
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const angle = Date.now() * 0.0003;
+      const visiblePoints = points.filter(p => p.visible);
+
+      const projected = visiblePoints.map(p => {
+        const rotated = rotateY(p, angle);
+        const scale = (300 / (300 + rotated.z)) * zoom;
+        return {
+          x: centerX + rotated.x * scale,
+          y: centerY + rotated.y * scale,
+          scale: scale
+        };
+      });
+
+      for (let i = 0; i < projected.length; i++) {
+        for (let j = i + 1; j < projected.length; j++) {
+          const dx = projected[i].x - projected[j].x;
+          const dy = projected[i].y - projected[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 100) {
+            ctx.strokeStyle = `rgba(255, 255, 255, ${1 - dist / 100})`;
+            ctx.lineWidth = 0.5;
+            ctx.beginPath();
+            ctx.moveTo(projected[i].x, projected[i].y);
+            ctx.lineTo(projected[j].x, projected[j].y);
+            ctx.stroke();
+          }
+        }
+      }
+
+      for (let p of projected) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 2 * p.scale, 0, Math.PI * 2);
+        ctx.fillStyle = "#ffffff";
+        ctx.shadowBlur = 6;
+        ctx.shadowColor = "#ffffff";
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+
+      requestAnimationFrame(draw);
+    }
+
+    function startReveal() {
+      companyName.classList.add("reveal");
+      let index = 0;
+      const interval = setInterval(() => {
+        if (index < points.length) {
+          points[index].visible = true;
+          if (index === 0) {
+            companyName.classList.remove("reveal");
+            companyName.classList.add("shrink");
+          }
+          index++;
+        } else {
+          clearInterval(interval);
+        }
+      }, 100);
+    }
+
+    setTimeout(() => {
+  document.body.classList.add("loaded");
+  loader.style.opacity = 0;
+  setTimeout(() => loader.style.display = "none", 1000);
+  startReveal();
+  draw();
+}, 2500);
+
+const cards = document.querySelectorAll('.card');
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, {
+    threshold: 0.2
+  });
+
+  cards.forEach(card => {
+    observer.observe(card);
+  });
+    window.addEventListener("scroll", () => {
+      const scrollY = window.scrollY;
+      zoom = 1 + scrollY / 1200;
+      zoom = Math.min(3, zoom);
+      blurAmount = Math.min(scrollY / 120, 6);
+      canvas.style.filter = `blur(${blurAmount}px)`;
+
+      if (scrollY > 600) {
+        globeOpacity = 1 - (scrollY - 600) / 600;
+        canvas.style.opacity = Math.max(0, globeOpacity);
+      }
+
+      if (scrollY > 1000) {
+        nextSection.classList.add("active");
+        socialLinks.forEach((link, i) => {
+          setTimeout(() => link.classList.add("visible"), i * 300);
+        });
+      }
+    });
+     // Parallax effect on cards
+const parallaxCards = document.querySelectorAll('.parallax');
+window.addEventListener('scroll', () => {
+  const scrollY = window.scrollY;
+  parallaxCards.forEach(card => {
+    const speed = parseFloat(card.dataset.speed);
+    card.style.transform = `translateY(${scrollY * speed * 0.05}px)`;
+  });
+});
+ 
+  </script>
+</body>
+</html>
